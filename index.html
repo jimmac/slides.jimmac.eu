@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Podium Viewer</title>
+<script src="marked.min.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ─── Landing ─── -->
+<div id="landing">
+  <h1>Podium <span>Viewer</span></h1>
+  <p class="sub">Browser-based presentation viewer for the Podium format</p>
+  <div class="drop-zone" id="dropZone">
+    <div class="icon"><img src="podium.svg" alt="Podium" width="64" height="64"></div>
+    <div class="label">Drop a <strong>.podium</strong> file here</div>
+    <div class="hint">or click to browse</div>
+    <input type="file" id="fileInput" accept=".podium,.md,.markdown">
+  </div>
+  <div class="alt-input">
+    <a id="showMdInput">Paste markdown instead</a>
+    </div>
+</div>
+
+<!-- ─── Markdown modal ─── -->
+<div id="md-modal">
+  <div class="panel">
+    <h2>Paste Markdown</h2>
+    <textarea id="mdTextarea" placeholder="Paste your Podium markdown content here&#10;&#10;Slides are separated by --- (three or more dashes)&#10;Use *[header]:text for slide headers&#10;Use *[footer]:text for slide footers"></textarea>
+    <div class="error" id="mdError">Could not parse any slides from the provided markdown.</div>
+    <div class="actions">
+      <button class="btn-secondary" id="mdCancel">Cancel</button>
+      <button class="btn-primary" id="mdApply">View Slides</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Loading ─── -->
+<div id="loading">
+  <div class="spinner"></div>
+  <span class="msg">Loading presentation&hellip;</span>
+</div>
+
+<!-- ─── Toast ─── -->
+<div id="toast"></div>
+
+<!-- ─── Viewer ─── -->
+<div id="viewer">
+  <div id="topbar">
+    <span class="brand">Podium <span>Viewer</span></span>
+    <span class="filename" id="fileName"></span>
+    <div class="spacer"></div>
+    <button id="btnFullscreen" title="Fullscreen (F)" aria-label="Fullscreen">&#x26F6;</button>
+    <button id="btnClose" title="Close" aria-label="Close">&times;</button>
+  </div>
+
+  <div id="slide-area">
+    <button class="nav-arrow prev" id="btnPrev" aria-label="Previous slide">&#x2039;</button>
+    <button class="nav-arrow next" id="btnNext" aria-label="Next slide">&#x203A;</button>
+
+    <div id="slide-frame">
+      <div class="slide-header" id="slideHeader"></div>
+      <div id="slide-content"></div>
+      <div class="slide-footer" id="slideFooter"></div>
+    </div>
+
+    <div id="counter">0 / 0</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
