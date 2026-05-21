@@ -190,12 +190,23 @@
     background: none;
     border: none;
     color: rgba(255,255,255,0.6);
-    font-size: 1.1rem;
     cursor: pointer;
-    padding: 0.3rem 0.5rem;
+    width: 32px;
+    height: 32px;
     border-radius: 6px;
-    transition: background 0.15s, color 0.15s;
-    line-height: 1;
+    transition: background 0.15s, color 0.15s, border-radius 0.15s;
+    line-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  #topbar #btnClose {
+    border-radius: 50%;
+  }
+  #topbar button svg {
+    width: 16px;
+    height: 16px;
   }
   #topbar button:hover {
     background: rgba(255,255,255,0.1);
@@ -260,7 +271,6 @@
     font-weight: 500;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
   .slide-footer {
     bottom: 0;
@@ -495,8 +505,8 @@
     border-radius: 0;
     box-shadow: none;
   }
-  #viewer.fullscreen .nav-arrow { display: none; }
-  #viewer.fullscreen #counter { bottom: 2rem; right: 2rem; }
+  #viewer.fullscreen .nav-arrow,
+  #viewer.fullscreen #counter { display: none; }
 
   /* ─── Responsive ─── */
   @media (max-width: 768px) {
