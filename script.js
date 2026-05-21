@@ -267,7 +267,7 @@
     var frame = els.slideFrame;
     if (!frame) return;
     var w = frame.clientWidth;
-    frame.style.setProperty('--podium-scale', Math.min(w / 1920, 1));
+    frame.style.setProperty('--podium-scale', w / 1920);
   }
 
   function applyCustomStyle() {
@@ -277,26 +277,9 @@
     if (ov) ov.remove();
     if (styleText) {
       var css = styleText
-        .replace(/^slide\b/gm, '#slide-frame')
+        .replace(/^slide\b/gm, '#slide-scaler')
         .replace(/\blabel\.header\b/g, '.slide-header')
         .replace(/\blabel\.footer\b/g, '.slide-footer');
-
-      /* Protect font-size declarations from px scaling */
-      var fsPlaceholders = {};
-      var fsCounter = 0;
-      css = css.replace(/font-size\s*:\s*[^;}]+/g, function(m) {
-        var key = '__PODIUM_FS_' + (fsCounter++) + '__';
-        fsPlaceholders[key] = m;
-        return key;
-      });
-
-      /* Scale remaining px values proportionally */
-      css = css.replace(/(-?[\d.]+)px/g, 'calc($1px * var(--podium-scale))');
-
-      /* Restore font-size declarations */
-      for (var key in fsPlaceholders) {
-        css = css.replace(key, fsPlaceholders[key]);
-      }
 
       var style = document.createElement('style');
       style.id = 'podium-custom-style';
@@ -681,6 +664,7 @@
   document.addEventListener('fullscreenchange', () => {
     isFullscreen = !!document.fullscreenElement;
     els.viewer.classList.toggle('fullscreen', isFullscreen);
+    setTimeout(updatePodiumScale, 10);
   });
 
   /* ─── Click slide to navigate ─── */
