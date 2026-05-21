@@ -14,13 +14,7 @@
     viewer:       document.getElementById('viewer'),
     dropZone:     document.getElementById('dropZone'),
     fileInput:    document.getElementById('fileInput'),
-    showMdInput:  document.getElementById('showMdInput'),
 
-    mdModal:      document.getElementById('md-modal'),
-    mdTextarea:   document.getElementById('mdTextarea'),
-    mdError:      document.getElementById('mdError'),
-    mdApply:      document.getElementById('mdApply'),
-    mdCancel:     document.getElementById('mdCancel'),
     loading:      document.getElementById('loading'),
     toast:        document.getElementById('toast'),
     fileName:     document.getElementById('fileName'),
@@ -553,12 +547,7 @@
     if (file.name.endsWith('.podium')) {
       loadPodiumFile(file);
     } else {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        assets = {}; styleText = '';
-        loadFromMarkdown(ev.target.result, file.name);
-      };
-      reader.readAsText(file);
+      toast('Unsupported file type. Use .podium files.', true);
     }
   });
 
@@ -577,12 +566,8 @@
     if (!file) return;
     if (file.name.endsWith('.podium')) {
       loadPodiumFile(file);
-    } else if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-      const reader = new FileReader();
-      reader.onload = (ev) => { assets = {}; styleText = ''; loadFromMarkdown(ev.target.result, file.name); };
-      reader.readAsText(file);
     } else {
-      toast('Unsupported file type. Use .podium or .md files.', true);
+      toast('Unsupported file type. Use .podium files.', true);
     }
   });
 
@@ -594,45 +579,12 @@
     if (!file) return;
     if (file.name.endsWith('.podium')) {
       loadPodiumFile(file);
-    } else if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-      const reader = new FileReader();
-      reader.onload = (ev) => { assets = {}; styleText = ''; loadFromMarkdown(ev.target.result, file.name); };
-      reader.readAsText(file);
     } else {
       toast('Unsupported file type.', true);
     }
   });
 
-  /* Markdown modal */
-  els.showMdInput.addEventListener('click', () => {
-    els.mdTextarea.value = '';
-    els.mdError.style.display = 'none';
-    els.mdModal.classList.add('open');
-    els.mdTextarea.focus();
-  });
-  els.mdCancel.addEventListener('click', () => {
-    els.mdModal.classList.remove('open');
-  });
-  els.mdModal.addEventListener('click', (e) => {
-    if (e.target === els.mdModal) els.mdModal.classList.remove('open');
-  });
-  els.mdApply.addEventListener('click', () => {
-    const text = els.mdTextarea.value;
-    if (!text.trim()) return;
-    els.mdError.style.display = 'none';
-    assets = {}; styleText = '';
-    const ok = loadFromMarkdown(text);
-    if (ok) {
-      els.mdModal.classList.remove('open');
-    } else {
-      els.mdError.style.display = 'block';
-    }
-  });
-  els.mdTextarea.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      els.mdApply.click();
-    }
-  });
+
 
   /* Navigation buttons */
   els.btnPrev.addEventListener('click', prevSlide);
