@@ -22,6 +22,7 @@
     slideHeader:  document.getElementById('slideHeader'),
     slideFooter:  document.getElementById('slideFooter'),
     slideFrame:   document.getElementById('slide-frame'),
+    slideScaler:  document.getElementById('slide-scaler'),
     slideArea:    document.getElementById('slide-area'),
     btnPrev:      document.getElementById('btnPrev'),
     btnNext:      document.getElementById('btnNext'),
@@ -168,6 +169,8 @@
     const hasMedia = !!imgMatch;
 
     if (hasMedia) {
+      const allMedia = fullBody.match(/!\[([^\]]*)\]\(([^)]+)\)/g) || [];
+      const n_media = allMedia.length;
       const alt = imgMatch[1];
       let src = imgMatch[2].replace(/^<|>$/g, '');
       const tags = parseMediaTags(alt);
@@ -184,6 +187,13 @@
         ? 'transform:translate(' + (-tags.hoffset) + 'px,' + (-tags.voffset) + 'px)' : '';
       var mediaStyle = 'width:100%;height:100%;object-fit:' + tags.fit;
       if (transform) mediaStyle += ';' + transform;
+
+      var isSingleImage = (n_media === 1 && titles.length === 0);
+      if (isSingleImage) {
+        els.slideScaler.classList.add('single-image');
+      } else {
+        els.slideScaler.classList.remove('single-image');
+      }
 
       /* Slides with only a media element render as background (full-bleed) */
       var isBg = tags.layer === 'background' || (!titles.length);
@@ -213,6 +223,8 @@
           '<div class="media-fig" ' + figStyle + '>' + mediaEl + '</div>';
       }
     } else {
+      els.slideScaler.classList.remove('single-image');
+      
       /* Detect title-and-list layout: h1 + >=2 h3s */
       var titles = extractTitles(body);
       var n_h1 = titles.filter(function(t) { return t.level === 1; }).length;
