@@ -501,7 +501,8 @@
   #viewer.fullscreen #topbar { display: none; }
   #viewer.fullscreen #slide-area { padding: 0; }
   #viewer.fullscreen #slide-frame {
-    max-width: none;
+    max-width: calc(100vh * (var(--slide-aspect)));
+    max-height: 100vh;
     border-radius: 0;
     box-shadow: none;
   }
