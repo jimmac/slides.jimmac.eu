@@ -225,13 +225,13 @@
     } else {
       els.slideScaler.classList.remove('single-image');
       
-      /* Detect title-and-list layout: h1 + >=2 h3s */
+      /* Detect layout type using Podium ruleset conventions */
       var titles = extractTitles(body);
       var n_h1 = titles.filter(function(t) { return t.level === 1; }).length;
       var n_h3 = titles.filter(function(t) { return t.level === 3; }).length;
-      var isTitleAndList = n_h1 >= 1 && n_h3 >= 2;
+      var isTitleList = n_h1 >= 1 && n_h3 >= 2;
 
-      els.slideContent.className = isTitleAndList ? 'title-and-list' : '';
+      els.slideContent.className = isTitleList ? 'title-list-slide' : 'title-slide';
       els.slideContent.innerHTML = renderMarkdown(body);
     }
 
@@ -289,10 +289,12 @@
     if (ov) ov.remove();
     if (styleText) {
       var css = styleText
-        .replace(/^slide\b/gm, '#slide-scaler')
+        .replace(/^(\s*)slide\b/gm, '$1#slide-scaler')
         .replace(/\blabel\.header\b/g, '.slide-header')
         .replace(/\blabel\.footer\b/g, '.slide-footer')
-        .replace(/\bmedia-slide\b/g, '.media-slide');
+        .replace(/\bmedia-slide\b/g, '.media-slide')
+        .replace(/\btitle-list-slide\b/g, '#slide-content.title-list-slide')
+        .replace(/(?<![-\w])title-slide\b/g, '#slide-content.title-slide');
 
       var style = document.createElement('style');
       style.id = 'podium-custom-style';
