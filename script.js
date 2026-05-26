@@ -23,6 +23,7 @@
     slideFooter:  document.getElementById('slideFooter'),
     slideFrame:   document.getElementById('slide-frame'),
     slideScaler:  document.getElementById('slide-scaler'),
+    slideBg:      document.getElementById('slide-background'),
     slideArea:    document.getElementById('slide-area'),
     btnPrev:      document.getElementById('btnPrev'),
     btnNext:      document.getElementById('btnNext'),
@@ -150,6 +151,65 @@
     return tags;
   }
 
+  /* ─── Background image support ─── */
+  function extractBackgroundMedia(text) {
+    /* Find ![@background ...](src) and remove it from the text,
+     * returning the background info and the filtered text. */
+    var bgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    var match;
+    var bgInfo = null;
+    var filtered = text;
+
+    while ((match = bgRegex.exec(text)) !== null) {
+      var tags = parseMediaTags(match[1]);
+      if (tags.layer === 'background') {
+        var src = match[2].replace(/^<|>$/g, '');
+        var mediaSrc = src;
+        if (assets[src]) mediaSrc = assets[src];
+        else if (assets['assets/' + src]) mediaSrc = assets['assets/' + src];
+        bgInfo = { src: mediaSrc, tags: tags, isVideo: /\.(mov|mp4|webm|ogg)$/i.test(src) };
+        filtered = text.slice(0, match.index) + text.slice(match.index + match[0].length);
+        break; /* Use only the first background media */
+      }
+    }
+    return { bg: bgInfo, text: filtered.trim() };
+  }
+
+  function applyBackground(bgInfo) {
+    if (!bgInfo) {
+      els.slideBg.innerHTML = '';
+      els.slideBg.style.display = 'none';
+      els.slideScaler.classList.remove('has-background');
+      return;
+    }
+    var tags = bgInfo.tags;
+    var transform = (tags.hoffset || tags.voffset)
+      ? 'transform:translate(' + (-tags.hoffset) + 'px,' + (-tags.voffset) + 'px)' : '';
+    var mediaStyle = 'width:100%;height:100%;object-fit:' + tags.fit;
+    if (transform) mediaStyle += ';' + transform;
+
+    els.slideBg.innerHTML = '';
+    els.slideBg.style.display = 'block';
+    els.slideScaler.classList.add('has-background');
+
+    if (bgInfo.isVideo) {
+      var video = document.createElement('video');
+      video.src = bgInfo.src;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.style.cssText = mediaStyle;
+      els.slideBg.appendChild(video);
+    } else {
+      var img = document.createElement('img');
+      img.alt = tags.alt;
+      img.style.cssText = mediaStyle;
+      img.src = bgInfo.src;
+      els.slideBg.appendChild(img);
+    }
+  }
+
   /* ─── Slide rendering ─── */
   function renderSlide(index) {
     if (!slides.length) return;
@@ -164,12 +224,17 @@
     els.slideFooter.textContent = footer || '';
     els.slideFooter.style.display = footer ? '' : 'none';
 
+    /* Extract @background images before layout processing */
+    var bgResult = extractBackgroundMedia(fullBody);
+    applyBackground(bgResult.bg);
+    var contentBody = bgResult.text;
+
     /* Detect if this is a media slide (contains an image at top level) */
-    const imgMatch = fullBody.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+    const imgMatch = contentBody.match(/!\[([^\]]*)\]\(([^)]+)\)/);
     const hasMedia = !!imgMatch;
 
     if (hasMedia) {
-      const allMedia = fullBody.match(/!\[([^\]]*)\]\(([^)]+)\)/g) || [];
+      const allMedia = contentBody.match(/!\[([^\]]*)\]\(([^)]+)\)/g) || [];
       const n_media = allMedia.length;
       const alt = imgMatch[1];
       let src = imgMatch[2].replace(/^<|>$/g, '');
@@ -180,7 +245,7 @@
       if (assets[src]) mediaSrc = assets[src];
       else if (assets['assets/' + src]) mediaSrc = assets['assets/' + src];
 
-      const rest = fullBody.replace(imgMatch[0], '').trim();
+      const rest = contentBody.replace(imgMatch[0], '').trim();
       const titles = extractTitles(rest);
       const isVideo = /\.(mov|mp4|webm|ogg)$/i.test(src);
       var transform = (tags.hoffset || tags.voffset)
@@ -196,7 +261,7 @@
       }
 
       /* Slides with only a media element render as background (full-bleed) */
-      var isBg = tags.layer === 'background' || (!titles.length);
+      var isBg = !titles.length;
 
       if (isBg) {
         els.slideContent.className = 'media-slide media-bg media-' + tags.fit;
@@ -222,17 +287,26 @@
         els.slideContent.innerHTML = titlesHtml +
           '<div class="media-fig" ' + figStyle + '>' + mediaEl + '</div>';
       }
+    } else if (!contentBody) {
+      /* Background-only slide with no other content */
+      els.slideScaler.classList.remove('single-image');
+      els.slideContent.className = 'title-slide';
+      els.slideContent.innerHTML = '';
     } else {
       els.slideScaler.classList.remove('single-image');
       
+      /* Re-extract body from filtered content for title layout */
+      var filteredFeatures = extractPodiumFeatures(contentBody);
+      var filteredBody = filteredFeatures.body;
+
       /* Detect layout type using Podium ruleset conventions */
-      var titles = extractTitles(body);
+      var titles = extractTitles(filteredBody);
       var n_h1 = titles.filter(function(t) { return t.level === 1; }).length;
       var n_h3 = titles.filter(function(t) { return t.level === 3; }).length;
       var isTitleList = n_h1 >= 1 && n_h3 >= 2;
 
       els.slideContent.className = isTitleList ? 'title-list-slide' : 'title-slide';
-      els.slideContent.innerHTML = renderMarkdown(body);
+      els.slideContent.innerHTML = renderMarkdown(filteredBody);
     }
 
     /* Podium CSS class conventions */
@@ -527,7 +601,7 @@
       png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
       gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
       avif: 'image/avif', bmp: 'image/bmp', ico: 'image/x-icon',
-      apng: 'image/png',
+      apng: 'image/png', jxl: 'image/jxl',
       mp4: 'video/mp4', webm: 'video/webm', ogg: 'video/ogg',
       mov: 'video/quicktime', m4v: 'video/mp4',
       pdf: 'application/pdf',

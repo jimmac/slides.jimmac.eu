@@ -247,6 +247,25 @@
     transform-origin: top left;
   }
 
+  /* Background image layer — behind slide content */
+  #slide-background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: none;
+    overflow: hidden;
+  }
+  #slide-background img,
+  #slide-background video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  #slide-scaler.has-background #slide-content {
+    background: transparent;
+  }
+
   #slide-content {
     flex: 1;
     width: 100%;
@@ -262,6 +281,7 @@
     justify-content: center;
     text-align: center;
     position: relative;
+    z-index: 1;
   }
   #slide-content.has-media { padding: 0; }
 
@@ -269,7 +289,7 @@
   .slide-header, .slide-footer {
     position: absolute;
     left: 0; right: 0;
-    z-index: 5;
+    z-index: 6;
     pointer-events: none;
   }
   .slide-header {
