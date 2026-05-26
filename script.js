@@ -199,14 +199,14 @@
       var isBg = tags.layer === 'background' || (!titles.length);
 
       if (isBg) {
-        els.slideContent.className = 'media-bg media-' + tags.fit;
+        els.slideContent.className = 'media-slide media-bg media-' + tags.fit;
         if (isVideo) {
           els.slideContent.innerHTML = '<video src="' + html(mediaSrc) + '" autoplay muted loop playsinline style="' + mediaStyle + '"></video>';
         } else {
           els.slideContent.innerHTML = '<img src="' + html(mediaSrc) + '" alt="' + html(tags.alt) + '" style="' + mediaStyle + '">';
         }
       } else {
-        els.slideContent.className = 'media-foreground';
+        els.slideContent.className = 'media-slide media-foreground';
 
         var titlesHtml = '';
         if (titles.length) {
@@ -291,7 +291,8 @@
       var css = styleText
         .replace(/^slide\b/gm, '#slide-scaler')
         .replace(/\blabel\.header\b/g, '.slide-header')
-        .replace(/\blabel\.footer\b/g, '.slide-footer');
+        .replace(/\blabel\.footer\b/g, '.slide-footer')
+        .replace(/\bmedia-slide\b/g, '.media-slide');
 
       var style = document.createElement('style');
       style.id = 'podium-custom-style';
