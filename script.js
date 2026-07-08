@@ -8,6 +8,7 @@
   let styleText = '';
   let markdownText = '';
   let isFullscreen = false;
+  let speakerWin = null;
 
   const els = {
     landing:      document.getElementById('landing'),
@@ -29,6 +30,7 @@
     btnNext:      document.getElementById('btnNext'),
     counter:      document.getElementById('counter'),
     btnFullscreen:document.getElementById('btnFullscreen'),
+    btnSpeakerNotes:document.getElementById('btnSpeakerNotes'),
     btnClose:     document.getElementById('btnClose'),
   };
 
@@ -107,6 +109,8 @@
         var t = toks[i];
         if (t.type === 'heading') {
           titleParts.push(t.raw);
+        } else if (t.type === 'paragraph' && /!\[/.test(t.raw)) {
+          /* Media paragraph (contains image) — skip from notes */
         } else if (t.type !== 'space') {
           noteParts.push(t.raw);
         }
@@ -116,6 +120,8 @@
       for (var i = 0; i < clean.length; i++) {
         if (/^\s*#{1,6}\s/.test(clean[i])) {
           titleParts.push(clean[i]);
+        } else if (/!\[/.test(clean[i])) {
+          /* Media line — skip from notes */
         } else {
           noteParts.push(clean[i]);
         }
@@ -322,6 +328,9 @@
     els.btnPrev.disabled = currentIndex === 0;
     els.btnNext.disabled = currentIndex === slides.length - 1;
     els.counter.textContent = (currentIndex + 1) + ' / ' + slides.length;
+
+    /* Sync speaker notes window */
+    sendSlideState();
 
     /* Fade in animation */
     els.slideFrame.classList.remove('fading');
@@ -705,6 +714,11 @@
         e.preventDefault();
         if (slides.length) renderSlide(slides.length - 1);
         break;
+      case 's':
+      case 'S':
+        e.preventDefault();
+        openSpeakerNotes();
+        break;
       case 'Escape':
         if (isFullscreen) toggleFullscreen();
         break;
@@ -776,6 +790,99 @@
     if (e.deltaY > 0) nextSlide();
     else prevSlide();
   }, { passive: true });
+
+  /* ─── Speaker Notes Window ─── */
+  function buildSlideState() {
+    if (!slides.length) return null;
+    const current = slides[currentIndex] || '';
+    const next = slides[currentIndex + 1] || '';
+    const curF = extractPodiumFeatures(current);
+    const nxtF = extractPodiumFeatures(next);
+
+    /* Capture rendered slide appearance for thumbnail */
+    var scaler = els.slideScaler;
+    var content = els.slideContent;
+    var computedScaler = scaler ? getComputedStyle(scaler) : {};
+    var computedContent = content ? getComputedStyle(content) : {};
+    var slideStyle = {
+      bg: computedScaler.backgroundColor || '',
+      color: computedContent.color || '',
+      bgImage: computedScaler.backgroundImage || '',
+    };
+    /* Check if there's a background media element */
+    var bgEl = els.slideBg;
+    var bgMediaSrc = '';
+    if (bgEl && bgEl.style.display !== 'none') {
+      var bgImg = bgEl.querySelector('img');
+      var bgVid = bgEl.querySelector('video');
+      if (bgImg) bgMediaSrc = bgImg.src;
+      else if (bgVid) bgMediaSrc = bgVid.poster || bgVid.src;
+    }
+    slideStyle.bgMediaSrc = bgMediaSrc;
+
+    /* Get innerHTML snapshot of the rendered current slide */
+    var slideHTML = content ? content.innerHTML : '';
+
+    /* For next slide, we need to render it briefly to capture its style.
+       Instead, send raw data and let the popup reconstruct. */
+    var nextBgResult = next ? extractBackgroundMedia(nxtF.fullBody) : { bg: null };
+    var nextBgSrc = '';
+    if (nextBgResult.bg) {
+      nextBgSrc = nextBgResult.bg.src || '';
+    }
+
+    return {
+      type: 'slide-update',
+      index: currentIndex,
+      total: slides.length,
+      notes: curF.notes,
+      currentTitle: curF.body,
+      currentHeader: curF.header,
+      currentFull: curF.fullBody,
+      nextTitle: nxtF.body,
+      nextFull: nxtF.fullBody,
+      hasNext: currentIndex < slides.length - 1,
+      slideStyle: slideStyle,
+      slideHTML: slideHTML,
+      nextBgSrc: nextBgSrc,
+      customCSS: styleText,
+    };
+  }
+
+  function sendSlideState() {
+    if (!speakerWin || speakerWin.closed) return;
+    const state = buildSlideState();
+    if (state) speakerWin.postMessage(state, '*');
+  }
+
+  /* Listen for navigation commands from speaker notes window */
+  window.addEventListener('message', (e) => {
+    if (!e.data || !e.data.type) return;
+    if (!els.viewer.classList.contains('active')) return;
+    if (e.data.type === 'nav-next') nextSlide();
+    else if (e.data.type === 'nav-prev') prevSlide();
+    else if (e.data.type === 'nav-goto' && typeof e.data.index === 'number') renderSlide(e.data.index);
+    else if (e.data.type === 'request-state') sendSlideState();
+  });
+
+  function openSpeakerNotes() {
+    if (speakerWin && !speakerWin.closed) {
+      speakerWin.focus();
+      sendSlideState();
+      return;
+    }
+    speakerWin = window.open('speaker-notes.html', 'podium-speaker-notes', 'width=720,height=700,menubar=no,toolbar=no,location=no,status=no');
+    if (!speakerWin) {
+      toast('Popup blocked \u2014 please allow popups for this site', true);
+      return;
+    }
+    /* Send initial state once the popup has loaded */
+    speakerWin.addEventListener('load', () => sendSlideState());
+    /* Fallback in case load event doesn't fire reliably */
+    setTimeout(() => sendSlideState(), 600);
+  }
+
+  els.btnSpeakerNotes.addEventListener('click', openSpeakerNotes);
 
   /* ─── Init ─── */
   console.log('Podium Viewer ready. Drop a .podium file or paste markdown to begin.');
