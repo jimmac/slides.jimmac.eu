@@ -21,6 +21,7 @@ fi
 
 OUT="${2:-$(basename "$SRC").podium}"
 
-tar -cf - -C "$SRC" . | zstd -19 -o "$OUT" --force
+# List files without ./ prefix so tar entries match what the viewer expects
+(cd "$SRC" && tar -cf - *) | zstd -19 -o "$OUT" --force
 
 echo "Created $OUT"
