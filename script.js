@@ -225,9 +225,9 @@
 
     /* Extract podium features */
     const { header, footer, body, notes, fullBody } = extractPodiumFeatures(slide);
-    els.slideHeader.textContent = header || '';
+    els.slideHeader.innerHTML = renderInline(header);
     els.slideHeader.style.display = header ? '' : 'none';
-    els.slideFooter.textContent = footer || '';
+    els.slideFooter.innerHTML = renderInline(footer);
     els.slideFooter.style.display = footer ? '' : 'none';
 
     /* Extract @background images before layout processing */
@@ -346,6 +346,16 @@
       titles.push({ level: m[1].length, text: m[2] });
     }
     return titles;
+  }
+
+  function renderInline(text) {
+    if (!text || !text.trim()) return '';
+    if (typeof marked !== 'undefined' && marked.parseInline) {
+      try { return marked.parseInline(text); } catch(e) { /* fall through */ }
+    }
+    return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.+?)\*/g, '<em>$1</em>');
   }
 
   function renderMarkdown(text) {

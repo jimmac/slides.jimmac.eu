@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Speaker Notes — Podium Viewer</title>
+<script src="marked.min.js"></script>
 <style>
   @font-face {
     font-family: 'Inter';
@@ -330,9 +331,13 @@
     els.timerToggle.textContent = 'Start';
   });
 
-  /* ── Simple markdown → HTML for notes ── */
+  /* ── Render markdown notes using marked ── */
   function mdToHTML(md) {
     if (!md || !md.trim()) return '';
+    if (typeof marked !== 'undefined' && marked.parse) {
+      try { return marked.parse(md, { gfm: true, breaks: true }); } catch(e) { /* fall through */ }
+    }
+    /* Fallback if marked didn't load */
     var s = md
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
